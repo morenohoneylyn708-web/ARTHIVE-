@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Arthive — Mini Arts & Culture (Improved)</title>
+<style>
+:root{
+  --bg:#071022; --card:#07131b; --muted:#9aa4b2; --accent:#7dd3fc; --accent-2:#60a5fa;
+  --gold:#c99a2f; --danger:#ef4444;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Arial; background:linear-gradient(180deg,#081226 0%, #051421 100%); color:#e6eef6; display:flex; flex-direction:column; min-height:100vh;
+}
+/* top bar */
+.topbar{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.03);position:relative}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:#04263b;font-weight:700}
+.app-title{font-weight:700;font-size:16px}
+.app-sub{font-size:12px;color:var(--muted)}
+.controls{margin-left:auto;display:flex;gap:8px;align-items:center}
+.search{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.04);padding:6px 8px;border-radius:10px;display:flex;align-items:center;gap:8px}
+.search input{background:transparent;border:0;color:inherit;outline:none;width:180px}
+.btn{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px 10px;border-radius:8px;color:inherit;cursor:pointer}
+.btn.primary{background:linear-gradient(90deg,var(--accent-2)33%,#7dd3fc22);border:0}
+/* layout */
+.container{padding:14px;flex:1;display:flex;flex-direction:column;gap:14px}
+.sections-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.section{background:var(--card);border-radius:12px;padding:12px;display:flex;flex-direction:column;min-height:120px}
+.section h3{margin:0;color:var(--gold);display:flex;align-items:center;gap:8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:10px}
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;overflow:hidden;cursor:pointer;position:relative;display:flex;flex-direction:column;min-height:160px;transition:transform .12s ease}
+.card:focus, .card:hover{transform:translateY(-4px)}
+.card img{width:100%;height:130px;object-fit:cover;background:#07101a}
+.card .meta{padding:8px}
+.card h4{margin:0;font-size:14px}
+.card p{margin:6px 0 0 0;font-size:12px;color:var(--muted)}
+.delete-btn{position:absolute;top:8px;right:8px;background:var(--danger);color:#fff;border:none;border-radius:6px;padding:4px 6px;cursor:pointer;font-size:12px}
+.delete-btn:hover{opacity:0.9}
+.empty{color:var(--muted);padding:10px;border-radius:8px}
+/* sidebar (mobile) */
+.hamburger{position:fixed;left:12px;bottom:12px;z-index:1001;background:var(--accent);border:none;border-radius:10px;padding:10px;box-shadow:0 8px 18px rgba(0,0,0,0.4);cursor:pointer}
+.sidebar{position:fixed;left:-320px;top:0;width:320px;height:100%;background:#06101a;padding:16px;transition:left .28s ease;z-index:1000;box-shadow:2px 0 18px rgba(0,0,0,0.6)}
+.sidebar.active{left:0}
+.sidebar h2{margin:6px 0 10px 0}
+.sidebar .socials{display:flex;gap:8px;margin-bottom:12px}
+.sidebar button{display:block;width:100%;margin-bottom:10px;padding:10px;border-radius:8px;border:0;background:var(--accent);color:#04263b;font-weight:600}
+.small{font-size:13px;color:var(--muted)}
+/* modal viewer */
+.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,0.6);z-index:1002}
+.viewer{width:94%;max-width:980px;background:linear-gradient(180deg,#061321,#041018);border-radius:12px;overflow:hidden;display:flex;gap:12px;align-items:start;padding:12px}
+.viewer img{width:60%;height:70vh;object-fit:contain;background:#07101a;border-radius:8px}
+.info{padding:12px;flex:1;color:inherit}
+.info h2{margin:0}
+.info p{color:var(--muted)}
+.close-x{margin-left:auto;cursor:pointer}
+/* responsive */
+@media(max-width:860px){
+  .sections-grid{grid-template-columns:repeat(2,1fr)}
+  .search input{width:110px}
+  .viewer img{width:100%;height:40vh}
+  .viewer{flex-direction:column}
+}
+@media(max-width:520px){
+  .sections-grid{grid-template-columns:1fr}
+}
+/* accessibility focus */
+button:focus, .card:focus{outline:3px solid rgba(125,211,252,0.18)}
+/* small helpers */
+.top-note{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
+</style>
+</head>
+<body>
+<button class="hamburger" id="hamburger" aria-label="open menu">☰</button>
+<div class="sidebar" id="sidebar" aria-hidden="true">
+  <button id="closeSidebar" aria-label="close menu">✕ Close</button>
+  <h2>Menu</h2>
+  <div class="small">Account</div>
+  <div style="display:flex;gap:8px;margin:8px 0">
+    <button id="authBtn" class="btn" aria-pressed="false">Sign in</button>
+    <button id="signOutBtn" class="btn" style="display:none">Sign out</button>
+  </div>
+  <div class="small">Upload to category</div>
+  <div style="display:grid;gap:8px;margin-top:8px">
+    <button id="uploadLiteratureBtn" class="btn">+ Literature</button>
+    <button id="uploadCultureBtn" class="btn">+ Culture</button>
+    <button id="uploadTraditionalBtn" class="btn">+ Traditional</button>
+    <button id="uploadArtworkBtn" class="btn">+ Artworks</button>
+  </div>
+  <hr style="margin:12px 0;border:none;border-top:1px solid rgba(255,255,255,0.04)">
+  <div class="small">Share</div>
+  <div class="socials" style="margin-top:8px">
+    <button class="btn" id="fbBtn">Facebook</button>
+    <button class="btn" id="instaBtn">Instagram</button>
+  </div>
+  <div style="margin-top:8px">
+    <button id="emailBtn" class="btn">Email</button>
+  </div>
+  <input id="uploadFile" type="file" accept="image/*" style="display:none" aria-hidden="true">
+</div>
+
+<header class="topbar">
+  <div class="brand" role="banner">
+    <div class="logo" aria-hidden="true">A</div>
+    <div>
+      <div class="app-title">Arthive</div>
+      <div class="app-sub">Mini Arts & Culture</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="search" role="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M21 21l-4.35-4.35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="11" cy="11" r="6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></circle></svg>
+      <input id="search" placeholder="Search title, artist, year..." aria-label="search" />
+    </div>
+    <button id="uploadQuick" class="btn primary" title="Quick upload">+ Upload</button>
+  </div>
+</header>
+
+<main class="container" id="main">
+  <div class="sections-grid" id="sectionsGrid">
+    <section class="section" aria-labelledby="literatureHeading"><h3 id="literatureHeading">📚 Literature</h3>
+      <div class="grid" id="literatureGrid" aria-live="polite"></div>
+      <div id="litEmpty" class="empty" style="display:none">No literature yet. Use the menu to upload.</div>
+    </section>
+    <section class="section" aria-labelledby="cultureHeading"><h3 id="cultureHeading">🌍 Culture</h3>
+      <div class="grid" id="cultureGrid" aria-live="polite"></div>
+      <div id="culEmpty" class="empty" style="display:none">No culture items yet.</div>
+    </section>
+    <section class="section" aria-labelledby="traditionalHeading"><h3 id="traditionalHeading">🧵 Traditional</h3>
+      <div class="grid" id="traditionalGrid" aria-live="polite"></div>
+      <div id="tradEmpty" class="empty" style="display:none">No traditional items yet.</div>
+    </section>
+    <section class="section" aria-labelledby="artHeading"><h3 id="artHeading">🎨 Artworks</h3>
+      <div class="grid" id="artworksGrid" aria-live="polite"></div>
+      <div id="artEmpty" class="empty" style="display:none">No artworks yet.</div>
+    </section>
+  </div>
+  <div class="top-note">Built for learning — single-file prototype. (Local storage only)</div>
+  <footer style="color:var(--muted);text-align:center;padding-top:8px">Arthive prototype</footer>
+</main>
+
+<div id="modal" class="modal" aria-hidden="true" role="dialog" aria-label="Image viewer">
+  <div class="viewer" role="document" aria-live="polite">
+    <img id="viewerImg" src="" alt="Viewer image" />
+    <div class="info">
+      <div style="display:flex;align-items:center;gap:8px">
+        <h2 id="viewerTitle">Title</h2>
+        <button id="likeBtn" class="btn" aria-pressed="false">☆ Like</button>
+        <button id="closeModal" class="btn close-x" aria-label="close viewer">✕</button>
+      </div>
+      <p id="viewerArtist" class="small">Artist</p>
+      <p id="viewerDesc"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== LOCAL STORAGE CONFIG =====
+const LOCAL_KEY = 'arthiveArtworks_v2';
+const USER_KEY = 'arthive_user';
+let artworks = JSON.parse(localStorage.getItem(LOCAL_KEY) || 'null') || [
+  // sample seeded items (use your own image data URLs if desired)
+  {id:'l1',title:'Poem Book',artist:'Unknown',year:'2020',src:'',category:'Literature',description:'Sample literature'},
+  {id:'c1',title:'Cultural Dance',artist:'M.Lee',year:'2018',src:'',category:'Culture',description:'Sample culture'},
+  {id:'t1',title:'Traditional Craft',artist:'Artisan',year:'2019',src:'',category:'Traditional',description:'Sample traditional craft'},
+  {id:'a1',title:'Poppies',artist:'Claude Monet',year:'1873',src:'',category:'Artworks',description:'Sample artwork'}
+];
+function save(){ localStorage.setItem(LOCAL_KEY, JSON.stringify(artworks)); }
+
+// ===== HELPERS =====
+function uid(prefix='id'){ return prefix+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,8) }
+function placeholderImage(){ return 'data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="100%" height="100%" fill="#07101a"/><text x="50%" y="50%" fill="#7dd3fc" font-size="28" text-anchor="middle" font-family="Arial">Image not available</text></svg>`) }
+function bindImgError(img){ img.addEventListener('error', ()=>{ img.src = placeholderImage(); }); }
+
+// ===== RENDERING =====
+function renderGrid(list, container){
+  container.innerHTML = '';
+  if(list.length === 0) return;
+  list.forEach(a=>{
+    const card = document.createElement('div'); card.className='card'; card.tabIndex=0;
+    const img = document.createElement('img'); img.src = a.src || placeholderImage(); img.alt = a.title||'art image'; bindImgError(img);
+    card.appendChild(img);
+
+    const del = document.createElement('button'); del.className='delete-btn'; del.textContent='✕'; del.title='Delete';
+    del.onclick = (e)=>{ e.stopPropagation(); e.preventDefault(); if(confirm('Delete "'+ (a.title||'Untitled') +'"?')){ artworks = artworks.filter(x=>x.id!==a.id); save(); renderAll(); } }
+    del.setAttribute('aria-label','Delete item');
+    card.appendChild(del);
+
+    const meta = document.createElement('div'); meta.className='meta';
+    const h = document.createElement('h4'); h.textContent = a.title||'Untitled';
+    const p = document.createElement('p'); p.textContent = (a.artist||'Unknown') + (a.year? (' • '+a.year):'');
+    meta.appendChild(h); meta.appendChild(p); card.appendChild(meta);
+
+    card.onclick = ()=> openViewer(a);
+    card.onkeypress = (e)=>{ if(e.key==='Enter' || e.key===' ') openViewer(a); }
+    container.appendChild(card);
+  })
+}
+function renderAll(){
+  renderGrid(artworks.filter(a=>a.category==='Literature'), document.getElementById('literatureGrid'));
+  renderGrid(artworks.filter(a=>a.category==='Culture'), document.getElementById('cultureGrid'));
+  renderGrid(artworks.filter(a=>a.category==='Traditional'), document.getElementById('traditionalGrid'));
+  renderGrid(artworks.filter(a=>a.category==='Artworks'), document.getElementById('artworksGrid'));
+
+  document.getElementById('litEmpty').style.display = artworks.some(a=>a.category==='Literature')? 'none':'block';
+  document.getElementById('culEmpty').style.display = artworks.some(a=>a.category==='Culture')? 'none':'block';
+  document.getElementById('tradEmpty').style.display = artworks.some(a=>a.category==='Traditional')? 'none':'block';
+  document.getElementById('artEmpty').style.display = artworks.some(a=>a.category==='Artworks')? 'none':'block';
+}
+renderAll();
+
+// ===== VIEWER =====
+const modal = document.getElementById('modal');
+const viewerImg = document.getElementById('viewerImg');
+const viewerTitle = document.getElementById('viewerTitle');
+const viewerArtist = document.getElementById('viewerArtist');
+const viewerDesc = document.getElementById('viewerDesc');
+const likeBtn = document.getElementById('likeBtn');
+let currentOpen = null;
+
+function openViewer(a){
+  currentOpen = artworks.find(x=>x.id===a.id) || a;
+  viewerImg.src = currentOpen.src || placeholderImage(); viewerImg.alt = currentOpen.title || 'image';
+  bindImgError(viewerImg);
+  viewerTitle.textContent = currentOpen.title || 'Untitled';
+  viewerArtist.textContent = (currentOpen.artist || 'Unknown') + (currentOpen.year ? ' • '+currentOpen.year : '');
+  viewerDesc.textContent = currentOpen.description || '';
+  likeBtn.textContent = (currentOpen.liked? '★ Liked':'☆ Like');
+  likeBtn.setAttribute('aria-pressed', !!currentOpen.liked);
+  modal.style.display = 'flex'; modal.setAttribute('aria-hidden','false');
+  // focus for accessibility
+  likeBtn.focus();
+}
+function closeViewer(){ modal.style.display='none'; modal.setAttribute('aria-hidden','true'); currentOpen = null; }
+document.getElementById('closeModal').onclick = closeViewer;
+modal.addEventListener('click', (e)=>{ if(e.target === modal) closeViewer(); })
+document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') { if(modal.style.display==='flex') closeViewer(); } })
+
+likeBtn.addEventListener('click', ()=>{
+  if(!currentOpen) return;
+  currentOpen.liked = !currentOpen.liked;
+  likeBtn.textContent = currentOpen.liked? '★ Liked':'☆ Like';
+  likeBtn.setAttribute('aria-pressed', !!currentOpen.liked);
+  // persist liked state to main artworks array and save
+  const idx = artworks.findIndex(x=>x.id===currentOpen.id);
+  if(idx>-1) { artworks[idx] = currentOpen; save(); renderAll(); }
+})
+
+// ===== SEARCH =====
+document.getElementById('search').addEventListener('input', (e)=>{
+  const q = e.target.value.trim().toLowerCase();
+  if(!q){ renderAll(); return; }
+  const filtered = artworks.filter(a=> (a.title||'').toLowerCase().includes(q) || (a.artist||'').toLowerCase().includes(q) || (String(a.year||'')).includes(q) );
+  // clear all grids and show combined result in first grid slot to simplify UI
+  const allGrids = [document.getElementById('literatureGrid'),document.getElementById('cultureGrid'),document.getElementById('traditionalGrid'),document.getElementById('artworksGrid')];
+  allGrids.forEach(g=>g.innerHTML='');
+  const container = document.createElement('div'); container.className='grid'; container.style.gridTemplateColumns = 'repeat(auto-fill,minmax(140px,1fr))';
+  if(filtered.length===0){ container.innerHTML = `<div class="empty">No results for "${q}"</div>` }
+  else filtered.forEach(a=>{
+    const card=document.createElement('div');card.className='card';card.tabIndex=0;
+    const img=document.createElement('img');img.src=a.src||placeholderImage();img.alt=a.title||'image';bindImgError(img);
+    card.appendChild(img);
+    const meta=document.createElement('div');meta.className='meta';meta.innerHTML=`<h4>${escapeHtml(a.title||'Untitled')}</h4><p>${escapeHtml(a.artist||'Unknown')}${a.year?(' • '+escapeHtml(a.year)):''}</p>`;card.appendChild(meta);
+    card.onclick=()=>openViewer(a);
+    card.onkeypress=(e)=>{ if(e.key==='Enter' || e.key===' ') openViewer(a) }
+    container.appendChild(card);
+  })
+  allGrids[0].appendChild(container);
+});
+
+// simple HTML escaper
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ===== UPLOAD (LOCAL ONLY) =====
+const uploadFile = document.getElementById('uploadFile');
+let pendingCategory = 'Artworks'; // default if using quick upload
+
+// central upload routine
+function uploadImage(category){
+  pendingCategory = category || 'Artworks';
+  // trigger file selector
+  uploadFile.value = ''; // reset so onchange fires even if same file
+  uploadFile.click();
+}
+
+// when user selects a file
+uploadFile.onchange = async (e) => {
+  const f = e.target.files && e.target.files[0];
+  if(!f) return;
+  if(!f.type.startsWith('image/')){ alert('Please select an image file.'); return; }
+
+  // gather meta via prompts (simple - you could replace with a modal form)
+  const defaultTitle = f.name.replace(/\.[^/.]+$/, "");
+  const title = prompt('Title for this item (optional):', defaultTitle) || defaultTitle;
+  const artist = prompt('Artist / Owner (optional):', localStorage.getItem(USER_KEY) || 'You') || 'You';
+  const year = prompt('Year (optional):', new Date().getFullYear()) || '';
+  const description = prompt('Short description (optional):', '') || '';
+
+  // read the file as data URL
+  const dataUrl = await readFileAsDataURL(f);
+
+  const obj = {
+    id: uid('art'),
+    title: title,
+    artist: artist,
+    year: year,
+    src: dataUrl,
+    category: pendingCategory,
+    description: description,
+    addedAt: new Date().toISOString()
+  };
+  artworks.unshift(obj); // newest first
+  save();
+  renderAll();
+  // Open viewer for immediate feedback
+  openViewer(obj);
+};
+
+// helper: file -> dataURL
+function readFileAsDataURL(file){
+  return new Promise((resolve, reject)=>{
+    const fr = new FileReader();
+    fr.onload = ()=>resolve(fr.result);
+    fr.onerror = ()=>reject(fr.error);
+    fr.readAsDataURL(file);
+  })
+}
+
+// hook upload buttons
+document.getElementById('uploadLiteratureBtn').addEventListener('click', ()=>{ uploadImage('Literature'); toggleSidebar(false); });
+document.getElementById('uploadCultureBtn').addEventListener('click', ()=>{ uploadImage('Culture'); toggleSidebar(false); });
+document.getElementById('uploadTraditionalBtn').addEventListener('click', ()=>{ uploadImage('Traditional'); toggleSidebar(false); });
+document.getElementById('uploadArtworkBtn').addEventListener('click', ()=>{ uploadImage('Artworks'); toggleSidebar(false); });
+document.getElementById('uploadQuick').addEventListener('click', ()=>{ uploadImage('Artworks'); });
+
+// ===== SIDEBAR & NAV =====
+const sidebar = document.getElementById('sidebar');
+const hamburger = document.getElementById('hamburger');
+const closeSidebarBtn = document.getElementById('closeSidebar');
+
+function toggleSidebar(force){
+  const active = sidebar.classList.contains('active');
+  const want = typeof force === 'boolean' ? force : !active;
+  if(want){ sidebar.classList.add('active'); sidebar.setAttribute('aria-hidden','false'); }
+  else{ sidebar.classList.remove('active'); sidebar.setAttribute('aria-hidden','true'); }
+}
+hamburger.addEventListener('click', ()=> toggleSidebar(true));
+closeSidebarBtn.addEventListener('click', ()=> toggleSidebar(false));
+document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') toggleSidebar(false); });
+
+// ===== AUTH (LOCAL SIMULATION) =====
+const authBtn = document.getElementById('authBtn');
+const signOutBtn = document.getElementById('signOutBtn');
+
+function updateAuthUI(){
+  const user = localStorage.getItem(USER_KEY);
+  if(user){
+    authBtn.style.display = 'none';
+    signOutBtn.style.display = 'inline-block';
+    signOutBtn.textContent = 'Sign out ('+user+')';
+  } else {
+    authBtn.style.display = 'inline-block';
+    authBtn.textContent = 'Sign in';
+    signOutBtn.style.display = 'none';
+  }
+}
+authBtn.addEventListener('click', ()=>{
+  // simple sign-in prompt (no backend)
+  const name = prompt('Sign in (enter name/email):','learner@example.com');
+  if(name){ localStorage.setItem(USER_KEY, name); updateAuthUI(); alert('Signed in as '+name); }
+});
+signOutBtn.addEventListener('click', ()=>{
+  if(confirm('Sign out?')){ localStorage.removeItem(USER_KEY); updateAuthUI(); }
+});
+updateAuthUI();
+
+// ===== SHARE BUTTONS (basic) ===

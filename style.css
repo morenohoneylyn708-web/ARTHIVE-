@@ -1,0 +1,16 @@
+/* Hamburger button — resized */
+#hamburger{
+  position:fixed;
+  top:16px;
+  left:16px;
+  z-index:1000;
+  font-size:20px;          /* smaller size */
+  cursor:pointer;
+  background:var(--accent);
+  border:none;
+  border-radius:6px;
+  padding:4px 6px;         /* less padding */
+  box-shadow:0 3px 8px rgba(0,0,0,0.5);
+  transition: background 0.3s;
+}
+#hamburger:hover{background:#34d399;}
